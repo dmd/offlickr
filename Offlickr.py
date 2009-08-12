@@ -9,6 +9,9 @@
 #   * wget patch
 #   * backup of videos as well
 #   * updated to Beej's Flickr API version 1.2 (required)
+# 
+# Beraldo Leal <beraldo at beraldoleal.com> contributed:
+#   * Download photos in set with -s and -p option
 
 import sys
 import libxml2
@@ -169,6 +172,15 @@ class Offlickr:
         if self.__testFailure(rsp):
             return None
         return rsp.photosets[0].photoset
+
+    def getPhotosetPhotos(self, pid):
+        """Returns a list of photos in a photosets"""
+
+        rsp = self.fapi.photosets_getPhotos(api_key=self.__flickrAPIKey,
+                auth_token=self.token, user_id=self.flickrUserId, photoset_id=pid)
+        if self.__testFailure(rsp):
+            return None
+        return rsp.photoset[0].photo
 
     def getPhotosetInfo(self, pid, method):
         """Returns a string containing information about a photoset (in XML)"""
@@ -430,6 +442,7 @@ def backupPhoto(
 
     filename = id + '.' + format
 
+    isPrivateFailure = False
     if os.path.isfile('%s/%s' % (t_dir, filename))\
          and not overwritePhotos:
         print '%s already downloaded... continuing' % filename
@@ -552,7 +565,7 @@ def backupLocation(
                       locationPermission)
 
 
-def backupPhotosets(offlickr, target, hash_level):
+def backupPhotosets(threads, offlickr, getPhotos, target, hash_level, doNotRedownload, overwritePhotos):
     """Back photosets up"""
 
     photosets = offlickr.getPhotosetList()
@@ -577,15 +590,58 @@ def backupPhotosets(offlickr, target, hash_level):
         if info == None:
             print 'Failed!'
         else:
-            fileWrite(offlickr.dryrun, target_dir(target, hash_level,
+            fileWrite(offlickr.dryrun, target_dir(target + '/sets/' + pid, hash_level,
                       pid), 'set_' + pid + '_info.xml', info)
         photos = offlickr.getPhotosetInfo(pid,
                 offlickr.fapi.photosets_getPhotos)
         if photos == None:
             print 'Failed!'
         else:
-            fileWrite(offlickr.dryrun, target_dir(target, hash_level,
+            fileWrite(offlickr.dryrun, target_dir(target + '/sets/' + pid, hash_level,
                       pid), 'set_' + pid + '_photos.xml', photos)
+      
+        photos = offlickr.getPhotosetPhotos(pid)
+        if photos == None:
+            print 'No photos found in this photoset'
+        else:
+           total = len(photos)
+           print 'Backing up', total, 'photos'
+
+           if threads > 1:
+               concurrentThreads = threading.Semaphore(threads)
+           i = 0
+           for p in photos:
+               i = i + 1
+               photoid = str(int(p['id']))  # Making sure we don't have weird things here
+               if threads > 1:
+                   concurrentThreads.acquire()
+                   downloader = photoBackupThread(
+                       concurrentThreads,
+                       i,
+                       total,
+                       photoid,
+                       p['title'],
+                       offlickr,
+                       target + '/sets/' + pid + '/photos',
+                       hash_level,
+                       getPhotos,
+                       doNotRedownload,
+                       overwritePhotos,
+                       )
+                   downloader.start()
+               else:
+                   backupPhoto(
+                       i,
+                       total,
+                       photoid,
+                       p['title'],
+                       target + '/sets/' + pid + '/photos',
+                       hash_level,
+                       offlickr,
+                       doNotRedownload,
+                       getPhotos,
+                       overwritePhotos,
+                       )
 
 
         # Do we want the picture too?
@@ -683,7 +739,7 @@ def main():
         )
 
     if photosets:
-        backupPhotosets(offlickr, target, hash_level)
+        backupPhotosets(threads, offlickr, getPhotos, target, hash_level, doNotRedownload, overwritePhotos)
     elif photoLocations:
         backupLocation(
             threads,
