@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python2.6
 # -*- coding: utf-8 -*-
 # Offlickr
 # Hugo Haas <hugo@larve.net> -- http://larve.net/people/hugo/
@@ -418,13 +418,13 @@ def backupPhoto(
 
     # if it's a Video, we cannot trust the format that getInfo told us.
     # we have to make an extra round trip to grab the Content-Disposition
-
+    isPrivateFailure = False
     if isVideo:
         sourceconnection = urllib.urlopen(source)
         try:
             format = sourceconnection.headers['Content-Disposition'].split('.')[-1].rstrip('"')
         except:
-            print 'warning: private videos cannot be backed up due to a Flickr bug'
+            print 'warning: private video %s cannot be backed up due to a Flickr bug' % str(id)
             format = 'privateVideofailure'
             isPrivateFailure = True
 
