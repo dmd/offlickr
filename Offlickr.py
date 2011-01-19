@@ -30,7 +30,8 @@ import logging
 __version__ = '0.22 - 2009-03-20'
 maxTime = '9999999999'
 
-# Gotten from Flickr
+# Gotten from Flickr. the flickrSecret isn't really a secret.
+# see http://markmail.org/message/mcgz7vbfw3lrjtbo
 
 flickrAPIKey = '1391fcd0a9780b247cd6a101272acf71'
 flickrSecret = 'fd221d0336de3b6d'
