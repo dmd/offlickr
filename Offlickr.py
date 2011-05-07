@@ -303,6 +303,7 @@ def usage():
     print '\t-o\t\toverwrite photo, even if it already exists'
     print '\t-L\t\tback up human-readable photo locations and permissions to separate files'
     print '\t-s\t\tback up all photosets (time range is ignored)'
+    print '\t-e\t\tback up videos ONLY'
     print '\t-w\t\tuse wget instead of internal Python HTTP library'
     print '\t-c <threads>\tnumber of threads to run to backup photos (default: 1)'
     print '\t-v\t\tverbose output'
@@ -389,6 +390,11 @@ def backupPhoto(
     overwritePhotos,
     ):
 
+    [source, isVideo] = offlickr.getOriginalPhoto(id)
+
+    if (getVideosOnly and not isVideo):
+        return
+
     print str(i) + '/' + str(total) + ': ' + id + ': '\
          + title.encode('utf-8')
     td = target_dir(target, hash_level, id)
@@ -423,7 +429,7 @@ def backupPhoto(
 
     if not getPhotos:
         return
-    [source, isVideo] = offlickr.getOriginalPhoto(id)
+
 
     if source == None:
         print 'Oopsie, no photo found'
@@ -693,6 +699,8 @@ def main():
             flickrUserId = a
         if o == '-p':
             getPhotos = True
+        if o == '-e':
+            getVideosOnly = True
         if o == '-o':
             overwritePhotos = True
         if o == '-n':
