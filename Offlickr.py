@@ -344,6 +344,7 @@ class photoBackupThread(threading.Thread):
         target,
         hash_level,
         getPhotos,
+        getVideosOnly,
         doNotRedownload,
         overwritePhotos,
         ):
@@ -357,6 +358,7 @@ class photoBackupThread(threading.Thread):
         self.target = target
         self.hash_level = hash_level
         self.getPhotos = getPhotos
+        self.getVideosOnly = getVideosOnly
         self.doNotRedownload = doNotRedownload
         self.overwritePhotos = overwritePhotos
         threading.Thread.__init__(self)
@@ -372,6 +374,7 @@ class photoBackupThread(threading.Thread):
             self.offlickr,
             self.doNotRedownload,
             self.getPhotos,
+            self.getVideosOnly,
             self.overwritePhotos,
             )
         self.sem.release()
@@ -387,6 +390,7 @@ def backupPhoto(
     offlickr,
     doNotRedownload,
     getPhotos,
+    getVideosOnly,
     overwritePhotos,
     ):
 
@@ -468,6 +472,7 @@ def backupPhotos(
     dateLo,
     dateHi,
     getPhotos,
+    getVideosOnly,
     doNotRedownload,
     overwritePhotos,
     ):
@@ -504,6 +509,7 @@ def backupPhotos(
                 target,
                 hash_level,
                 getPhotos,
+                getVideosOnly,
                 doNotRedownload,
                 overwritePhotos,
                 )
@@ -519,6 +525,7 @@ def backupPhotos(
                 offlickr,
                 doNotRedownload,
                 getPhotos,
+                getVideosOnly,
                 overwritePhotos,
                 )
 
@@ -572,7 +579,7 @@ def backupLocation(
                       locationPermission)
 
 
-def backupPhotosets(threads, offlickr, getPhotos, target, hash_level, doNotRedownload, overwritePhotos):
+def backupPhotosets(threads, offlickr, getPhotos, getVideosOnly, target, hash_level, doNotRedownload, overwritePhotos):
     """Back photosets up"""
 
     photosets = offlickr.getPhotosetList()
@@ -632,6 +639,7 @@ def backupPhotosets(threads, offlickr, getPhotos, target, hash_level, doNotRedow
                        target + '/sets/' + pid + '/photos',
                        hash_level,
                        getPhotos,
+                       getVideosOnly,
                        doNotRedownload,
                        overwritePhotos,
                        )
@@ -647,6 +655,7 @@ def backupPhotosets(threads, offlickr, getPhotos, target, hash_level, doNotRedow
                        offlickr,
                        doNotRedownload,
                        getPhotos,
+                       getVideosOnly,
                        overwritePhotos,
                        )
 
@@ -672,6 +681,7 @@ def main():
     dateLo = '1'
     dateHi = maxTime
     getPhotos = False
+    getVideosOnly = False
     overwritePhotos = False
     doNotRedownload = False
     target = 'dst'
@@ -687,7 +697,7 @@ def main():
 
     try:
         (opts, args) = getopt.getopt(sys.argv[1:],
-                'hvponNLswf:t:d:i:c:l:', ['help'])
+                'ehvponNLswf:t:d:i:c:l:', ['help'])
     except getopt.GetoptError:
         usage()
         sys.exit(2)
@@ -748,7 +758,7 @@ def main():
         )
 
     if photosets:
-        backupPhotosets(threads, offlickr, getPhotos, target, hash_level, doNotRedownload, overwritePhotos)
+        backupPhotosets(threads, offlickr, getPhotos, getVideosOnly, target, hash_level, doNotRedownload, overwritePhotos)
     elif photoLocations:
         backupLocation(
             threads,
@@ -768,6 +778,7 @@ def main():
             dateLo,
             dateHi,
             getPhotos,
+            getVideosOnly,
             doNotRedownload,
             overwritePhotos,
             )
